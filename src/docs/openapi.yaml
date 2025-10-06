@@ -1,0 +1,237 @@
+openapi: 3.0.0
+info:
+  title: Quiz API JS
+  version: 1.0.0
+  description: Quiz API backend in Node.js (JavaScript)
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/v1/quizzes:
+    post:
+      summary: Create a quiz
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: Math Quiz
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quiz'
+    get:
+      summary: List quizzes
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of quizzes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Quiz'
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+  /api/v1/quizzes/{quizId}/questions:
+    post:
+      summary: Add question to quiz
+      parameters:
+        - in: path
+          name: quizId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+    get:
+      summary: List questions (no answers)
+      parameters:
+        - in: path
+          name: quizId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuestionNoAnswer'
+  /api/v1/quizzes/{quizId}/submit:
+    post:
+      summary: Submit answers and get score
+      parameters:
+        - in: path
+          name: quizId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answers:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/AnswerInput'
+      responses:
+        '200':
+          description: Submission result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResult'
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Health
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  uptime:
+                    type: number
+                  timestamp:
+                    type: number
+components:
+  schemas:
+    Quiz:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+    QuestionInput:
+      type: object
+      properties:
+        text:
+          type: string
+        type:
+          type: string
+          enum: [single_choice, multiple_choice, text]
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/OptionInput'
+        expectedAnswer:
+          type: string
+    OptionInput:
+      type: object
+      properties:
+        text:
+          type: string
+        isCorrect:
+          type: boolean
+    Question:
+      allOf:
+        - $ref: '#/components/schemas/QuestionInput'
+        - type: object
+          properties:
+            _id:
+              type: string
+            quiz:
+              type: string
+            createdAt:
+              type: string
+            updatedAt:
+              type: string
+    QuestionNoAnswer:
+      allOf:
+        - $ref: '#/components/schemas/QuestionInput'
+        - type: object
+          properties:
+            _id:
+              type: string
+            quiz:
+              type: string
+            createdAt:
+              type: string
+            updatedAt:
+              type: string
+      description: Does not include isCorrect or expectedAnswer
+    AnswerInput:
+      type: object
+      properties:
+        questionId:
+          type: string
+        selectedOptionIds:
+          type: array
+          items:
+            type: string
+    SubmissionResult:
+      type: object
+      properties:
+        score:
+          type: integer
+        total:
+          type: integer
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId:
+                type: string
+              correct:
+                type: boolean
+              ignored:
+                type: boolean
+        meta:
+          type: object
+          properties:
+            totalChoiceQuestions:
+              type: integer
+            ignoredTextQuestions:
+              type: integer
