@@ -1,87 +1,200 @@
-# quiz-api-js
+# Quiz API JS
 
-A production-ready Quiz API backend built with Node.js, Express, and MongoDB (Mongoose). Features robust validation, clean architecture, full test coverage, and OpenAPI docs.
+A production-ready backend API for a Quiz application built with **Node.js**, **Express**, and **MongoDB**. This API supports creating quizzes, adding questions, submitting answers, and calculating scores with robust validation and clean architecture.
 
-## Tech Stack
-- Node.js + Express
-- MongoDB + Mongoose
-- Joi (validation)
-- Jest + Supertest (tests)
-- ESLint (airbnb-base) + Prettier + EditorConfig
-- Swagger (OpenAPI YAML)
-- Nodemon for development
-
-## Quick Start
-```sh
-npm i
-cp .env.example .env   # set MONGODB_URI, PORT=3000
-npm run dev
-# Swagger: http://localhost:3000/api-docs
-npm test
-```
-
-## Endpoints
-| Method | Endpoint                                 | Description                  |
-|--------|------------------------------------------|------------------------------|
-| POST   | /api/v1/quizzes                          | Create quiz                  |
-| GET    | /api/v1/quizzes                          | List quizzes (pagination)    |
-| POST   | /api/v1/quizzes/:quizId/questions        | Add question to quiz         |
-| GET    | /api/v1/quizzes/:quizId/questions        | List questions (no answers)  |
-| POST   | /api/v1/quizzes/:quizId/submit           | Submit answers & get score   |
-| GET    | /health                                 | Health check                 |
-
-## Validation Rules
-- **Quiz**: title required (3–100 chars)
-- **Question**:
-  - text required (3–500)
-  - type: single_choice | multiple_choice | text
-  - For choice types: options required (min 2), each { text, isCorrect }
-    - single_choice: exactly one correct
-    - multiple_choice: at least one correct
-  - For text: expectedAnswer optional, ≤300 chars
-- **Submit**:
-  - answers: array of { questionId, selectedOptionIds[] }
-  - single_choice: exactly one selected
-
-## Example cURL
-Create quiz:
-```sh
-curl -X POST http://localhost:3000/api/v1/quizzes -H "Content-Type: application/json" -d '{"title":"Math Quiz"}'
-```
-Add question:
-```sh
-curl -X POST http://localhost:3000/api/v1/quizzes/<quizId>/questions -H "Content-Type: application/json" -d '{"text":"2+2?","type":"single_choice","options":[{"text":"4","isCorrect":true},{"text":"3","isCorrect":false}]}'
-```
-Submit answers:
-```sh
-curl -X POST http://localhost:3000/api/v1/quizzes/<quizId>/submit -H "Content-Type: application/json" -d '{"answers":[{"questionId":"<questionId>","selectedOptionIds":["<optionId>"]}]}'
-```
-
-## Design Choices & Limitations
-- Controllers are thin; business logic in services; DB logic in models.
-- Consistent error JSON: `{ "error": { "message": "...", "code": "..." } }`
-- GET questions never leaks correct answers.
-- Scoring: exact-set match for multiple_choice, text questions ignored.
-- Pagination: ?page&limit, limit max 100.
-- No Docker, JavaScript only.
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Node.js](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)
 
 ---
 
-✅ Quiz API scaffolded successfully!
-Endpoints:
-POST /api/v1/quizzes
-GET  /api/v1/quizzes
-POST /api/v1/quizzes/:quizId/questions
-GET  /api/v1/quizzes/:quizId/questions
-POST /api/v1/quizzes/:quizId/submit
-GET  /health
-Run locally:
-npm i
-cp .env.example .env
-npm run dev
-# Swagger: http://localhost:3000/api-docs
-npm test
-Notes:
-- GET questions never leaks correct answers
-- Scoring does exact-set match for multiple_choice
-- Text questions are ignored for scoring
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [API Endpoints](#api-endpoints)
+- [Validation Rules](#validation-rules)
+- [Example Usage](#example-usage)
+- [Swagger Documentation](#swagger-documentation)
+- [Testing](#testing)
+- [Design Choices and Limitations](#design-choices-and-limitations)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Tech Stack
+
+- **Node.js** + **Express**: Backend framework.
+- **MongoDB** + **Mongoose**: Database and ORM.
+- **Joi**: Schema validation.
+- **Jest** + **Supertest**: Testing framework.
+- **Swagger**: API documentation.
+- **ESLint**, **Prettier**, **EditorConfig**: Code quality tools.
+
+---
+
+## Features
+
+- Create and manage quizzes.
+- Add questions to quizzes with validation.
+- Submit answers and calculate scores.
+- Pagination for listing quizzes.
+- Swagger UI for interactive API documentation.
+- Comprehensive unit and end-to-end tests.
+
+---
+
+## Quick Start
+
+1. **Clone the Repository**:
+
+   ```bash
+   git clone https://github.com/aabhishekn/Online-Quiz-Application-API.git
+   cd Online-Quiz-Application-API
+   ```
+
+2. **Install Dependencies**:
+
+   ```bash
+   npm install
+   ```
+
+3. **Set Up Environment Variables**:
+   - Copy the example `.env` file:
+     ```bash
+     cp .env.example .env
+     ```
+   - Set the `MONGODB_URI` and `PORT` in the `.env` file.
+
+4. **Run the Application**:
+   - Development mode:
+     ```bash
+     npm run dev
+     ```
+   - Production mode:
+     ```bash
+     npm start
+     ```
+
+5. **Access Swagger UI**:
+   - Open [http://localhost:3000/api-docs](http://localhost:3000/api-docs) in your browser.
+
+6. **Run Tests**:
+   ```bash
+   npm test
+   ```
+
+---
+
+## API Endpoints
+
+| Method | Endpoint                            | Description                   |
+| ------ | ----------------------------------- | ----------------------------- |
+| POST   | `/api/v1/quizzes`                   | Create a new quiz.            |
+| GET    | `/api/v1/quizzes`                   | List all quizzes (paginated). |
+| POST   | `/api/v1/quizzes/:quizId/questions` | Add a question to a quiz.     |
+| GET    | `/api/v1/quizzes/:quizId/questions` | List questions (no answers).  |
+| POST   | `/api/v1/quizzes/:quizId/submit`    | Submit answers and get score. |
+| GET    | `/health`                           | Health check.                 |
+
+---
+
+## Validation Rules
+
+- **Create Quiz**:
+  - `title`: Required, 3–100 characters.
+- **Add Question**:
+  - `text`: Required, 3–500 characters.
+  - `type`: Enum (`single_choice`, `multiple_choice`, `text`).
+  - `options`: Required for choice types (min 2).
+    - `single_choice`: Exactly one `isCorrect:true`.
+    - `multiple_choice`: At least one `isCorrect:true`.
+  - `expectedAnswer`: Optional for `text` type, ≤300 characters.
+- **Submit**:
+  - `answers`: Array of `{ questionId, selectedOptionIds }`.
+  - `single_choice`: Exactly one selected ID.
+
+---
+
+## Example Usage
+
+### Create a Quiz
+
+```bash
+curl -X POST http://localhost:3000/api/v1/quizzes \
+-H "Content-Type: application/json" \
+-d '{"title": "Math Quiz"}'
+```
+
+### Add a Question
+
+```bash
+curl -X POST http://localhost:3000/api/v1/quizzes/<quizId>/questions \
+-H "Content-Type: application/json" \
+-d '{
+  "text": "What is 2+2?",
+  "type": "single_choice",
+  "options": [
+    { "text": "3", "isCorrect": false },
+    { "text": "4", "isCorrect": true }
+  ]
+}'
+```
+
+---
+
+## Swagger Documentation
+
+- Access the interactive API documentation at:
+  [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+
+---
+
+## Testing
+
+- Run all tests:
+  ```bash
+  npm test
+  ```
+- Check test coverage:
+  ```bash
+  npx jest --coverage
+  ```
+
+---
+
+## Design Choices and Limitations
+
+- **Thin Controllers**: Business logic is delegated to services.
+- **Validation**: Joi ensures robust input validation.
+- **Scoring**: Exact set matching for `multiple_choice` questions.
+- **Limitations**:
+  - No user authentication.
+  - No Docker support.
+
+---
+
+## Contributing
+
+1. Fork the repository.
+2. Create a feature branch:
+   ```bash
+   git checkout -b feature-name
+   ```
+3. Commit your changes:
+   ```bash
+   git commit -m "Add new feature"
+   ```
+4. Push to your branch:
+   ```bash
+   git push origin feature-name
+   ```
+5. Open a pull request.
+
+---
+
+## License
+
+This project is licensed under the MIT License.
